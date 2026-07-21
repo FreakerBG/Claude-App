@@ -2,6 +2,10 @@ name: Deploy to GitHub Pages
 
 # Builds the PWA and publishes it to GitHub Pages so it can be installed
 # on your iPhone (Safari → Add to Home Screen) and PC (browser → Install).
+#
+# ONE-TIME SETUP (only needed the very first time):
+#   On GitHub → repo Settings → Pages → "Build and deployment" →
+#   Source: "GitHub Actions". After that this workflow deploys on every push.
 on:
   push:
     branches:
@@ -28,13 +32,6 @@ jobs:
         with:
           node-version: 20
           cache: npm
-      # Enables GitHub Pages automatically if it isn't already, so there's
-      # no manual toggle needed in the repo settings.
-      - name: Setup Pages
-        id: pages
-        uses: actions/configure-pages@v5
-        with:
-          enablement: true
       - run: npm ci
       - name: Build
         run: npm run build
