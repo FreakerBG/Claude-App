@@ -3,8 +3,9 @@ import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 
 // Base path is '/' for local dev/preview and set to the repo subpath
-// (e.g. '/claude-app/') by the GitHub Pages deploy workflow via BASE_PATH.
-const base = process.env.BASE_PATH || '/'
+// (e.g. '/Claude-App/') by the GitHub Pages deploy workflow via BASE_PATH.
+// Normalize to always end in a single trailing slash, which Vite requires.
+const base = (process.env.BASE_PATH || '/').replace(/\/*$/, '/')
 
 export default defineConfig({
   base,

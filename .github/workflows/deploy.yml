@@ -28,13 +28,20 @@ jobs:
         with:
           node-version: 20
           cache: npm
+      # Enables GitHub Pages automatically if it isn't already, so there's
+      # no manual toggle needed in the repo settings.
+      - name: Setup Pages
+        id: pages
+        uses: actions/configure-pages@v5
+        with:
+          enablement: true
       - run: npm ci
       - name: Build
         run: npm run build
         env:
-          # Project pages are served from /<repo>/ — set the base path so
-          # assets resolve at https://<user>.github.io/claude-app/
-          BASE_PATH: /claude-app/
+          # Project pages are served from /<repo>/ — the repo is "Claude-App",
+          # so assets must resolve at https://freakerbg.github.io/Claude-App/
+          BASE_PATH: /Claude-App/
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist
