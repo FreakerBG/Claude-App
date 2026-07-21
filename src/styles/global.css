@@ -610,3 +610,223 @@ a {
     font-size: 23px;
   }
 }
+
+/* ---------------- v2: momentum, insights, tags, nudges ---------------- */
+
+/* momentum level ring */
+.level-ring {
+  width: 76px;
+  height: 76px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  background: conic-gradient(
+    var(--brand) calc(var(--p, 0) * 1%),
+    var(--surface-2) 0
+  );
+}
+.level-ring .inner {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: var(--surface);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+.level-ring .lvl {
+  font-size: 20px;
+  font-weight: 800;
+}
+.level-ring .cap {
+  font-size: 9px;
+  color: var(--text-faint);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-top: 2px;
+}
+
+/* badges */
+.badge-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+  gap: 10px;
+}
+.badge {
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 12px 8px;
+  text-align: center;
+  background: var(--surface);
+}
+.badge.locked {
+  opacity: 0.4;
+  filter: grayscale(1);
+}
+.badge .b-emoji {
+  font-size: 26px;
+}
+.badge .b-label {
+  font-size: 12px;
+  font-weight: 700;
+  margin-top: 4px;
+}
+.badge .b-desc {
+  font-size: 10px;
+  color: var(--text-dim);
+  margin-top: 2px;
+  line-height: 1.2;
+}
+
+/* activity tag chips */
+.tag-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.tag-chip {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  border-radius: 999px;
+  padding: 7px 12px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-dim);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: background 0.12s, border-color 0.12s, color 0.12s;
+}
+.tag-chip.on {
+  border-color: var(--brand);
+  background: var(--brand-soft);
+  color: var(--brand);
+}
+
+/* nudge banner */
+.nudge {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--brand-soft);
+  border: 1px solid transparent;
+  border-radius: 14px;
+  padding: 12px 14px;
+  margin-bottom: 16px;
+}
+.nudge .n-emoji {
+  font-size: 22px;
+}
+.nudge .grow {
+  flex: 1;
+  min-width: 0;
+}
+.nudge .n-title {
+  font-weight: 700;
+  font-size: 14px;
+}
+.nudge .n-sub {
+  font-size: 12.5px;
+  color: var(--text-dim);
+}
+
+/* year in pixels */
+.pixels {
+  display: grid;
+  grid-template-columns: 22px repeat(12, 1fr);
+  gap: 3px;
+  align-items: center;
+}
+.pixels .pmonth {
+  font-size: 9px;
+  color: var(--text-faint);
+  text-align: center;
+}
+.pixels .pday-label {
+  font-size: 8px;
+  color: var(--text-faint);
+  text-align: right;
+  padding-right: 2px;
+}
+.pixels .pcell {
+  aspect-ratio: 1;
+  border-radius: 2px;
+  background: var(--surface-2);
+}
+
+/* correlation row */
+.corr {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--border);
+}
+.corr:last-child {
+  border-bottom: none;
+}
+.corr .c-emoji {
+  font-size: 20px;
+  width: 26px;
+  text-align: center;
+}
+.corr .grow {
+  flex: 1;
+  min-width: 0;
+}
+.corr .c-delta {
+  font-weight: 800;
+  font-size: 15px;
+}
+
+/* summary triple (income / spent / net) */
+.triple {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 8px;
+  text-align: center;
+}
+.triple .t-cell {
+  padding: 8px 4px;
+}
+.triple .t-label {
+  font-size: 11px;
+  color: var(--text-faint);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.triple .t-val {
+  font-size: 18px;
+  font-weight: 800;
+  margin-top: 3px;
+}
+
+/* quick-add grid */
+.qa-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.qa-btn {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  border-radius: 14px;
+  padding: 16px 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  font-weight: 600;
+}
+.qa-btn:active {
+  transform: scale(0.97);
+}
+.qa-btn .qa-emoji {
+  font-size: 26px;
+}
