@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useStore } from '../store/StoreContext'
 import { Modal } from '../components/Modal'
 import { formatFullDate } from '../utils/dates'
+import { confettiBurst } from '../utils/confetti'
 
 export function Goals() {
   const { data, addGoal, updateGoal, deleteGoal } = useStore()
@@ -95,12 +96,11 @@ export function Goals() {
                   </button>
                   <button
                     className="btn sm"
-                    onClick={() => {
+                    onClick={(e) => {
                       const next = g.currentValue + step
-                      updateGoal(g.id, {
-                        currentValue: next,
-                        done: next >= g.targetValue,
-                      })
+                      const nowDone = next >= g.targetValue
+                      if (nowDone && !g.done) confettiBurst(e.clientX, e.clientY)
+                      updateGoal(g.id, { currentValue: next, done: nowDone })
                     }}
                   >
                     +{step}

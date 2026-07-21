@@ -3,6 +3,10 @@ import { useStore } from '../store/StoreContext'
 import { exportData, importData } from '../store/db'
 import { CURRENCIES } from '../utils/currency'
 import { ThemePref } from '../store/types'
+import {
+  notificationsSupported,
+  requestNotifyPermission,
+} from '../utils/reminder'
 
 const SWATCHES = [
   '#ef4444', '#f59e0b', '#eab308', '#10b981', '#3b82f6',
@@ -23,6 +27,21 @@ export function Settings() {
   const [newCat, setNewCat] = useState('')
   const [newColor, setNewColor] = useState('#6366f1')
   const [importMsg, setImportMsg] = useState('')
+  const [reminderMsg, setReminderMsg] = useState('')
+
+  const toggleReminder = async (on: boolean) => {
+    if (on) {
+      const perm = await requestNotifyPermission()
+      if (perm !== 'granted') {
+        setReminderMsg(
+          'Notifications are blocked. Allow them for this site (on iPhone, add the app to your Home Screen first).',
+        )
+        setTimeout(() => setReminderMsg(''), 4000)
+        return
+      }
+    }
+    updateSettings({ reminderEnabled: on })
+  }
 
   const onImport = async (file?: File) => {
     if (!file) return
@@ -88,6 +107,45 @@ export function Settings() {
             ))}
           </div>
         </div>
+      </div>
+
+      <div className="card">
+        <div className="card-title">Daily reminder</div>
+        <div
+          className="row"
+          style={{ justifyContent: 'space-between', marginBottom: 12 }}
+        >
+          <span className="muted">Remind me to check in</span>
+          <label className="row" style={{ gap: 8, cursor: 'pointer' }}>
+            <input
+              type="checkbox"
+              checked={!!data.settings.reminderEnabled}
+              onChange={(e) => toggleReminder(e.target.checked)}
+              style={{ width: 20, height: 20 }}
+            />
+          </label>
+        </div>
+        {data.settings.reminderEnabled && (
+          <div className="field" style={{ marginBottom: 0 }}>
+            <label>Reminder time</label>
+            <input
+              className="input"
+              type="time"
+              value={data.settings.reminderTime || '20:00'}
+              onChange={(e) => updateSettings({ reminderTime: e.target.value })}
+            />
+          </div>
+        )}
+        <p className="faint" style={{ fontSize: 12.5, marginBottom: 0 }}>
+          {notificationsSupported()
+            ? 'A gentle nudge for anything still open. On iPhone, reminders work best when the app is added to your Home Screen and opened during the day.'
+            : 'This browser doesn’t support notifications, but the app will still nudge you on the dashboard.'}
+        </p>
+        {reminderMsg && (
+          <div style={{ color: 'var(--amber)', fontSize: 13, marginTop: 8 }}>
+            {reminderMsg}
+          </div>
+        )}
       </div>
 
       <div className="card">

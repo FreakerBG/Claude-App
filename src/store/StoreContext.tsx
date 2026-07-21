@@ -11,13 +11,16 @@ import {
 import {
   AppData,
   Category,
+  EntryType,
   Goal,
   Habit,
-  JournalEntry,
+  RecurringTask,
+  RepeatMode,
   Settings,
+  Subscription,
   Task,
 } from './types'
-import { defaultData, loadData, saveData, uid } from './db'
+import { defaultData, loadData, materializeRecurring, saveData, uid } from './db'
 import { todayKey } from '../utils/dates'
 
 interface StoreContextValue {
@@ -28,14 +31,22 @@ interface StoreContextValue {
   updateTask: (id: string, patch: Partial<Task>) => void
   deleteTask: (id: string) => void
   carryOverTasks: (from: string, to: string) => void
-  // expenses
+  // recurring tasks
+  addRecurringTask: (title: string, repeat: RepeatMode) => void
+  deleteRecurringTask: (id: string) => void
+  // expenses & income
   addExpense: (e: {
     amount: number
     categoryId: string
     date: string
     note?: string
+    type?: EntryType
   }) => void
   deleteExpense: (id: string) => void
+  // subscriptions
+  addSubscription: (s: Omit<Subscription, 'id' | 'createdAt' | 'active'>) => void
+  updateSubscription: (id: string, patch: Partial<Subscription>) => void
+  deleteSubscription: (id: string) => void
   // categories
   addCategory: (name: string, color: string) => void
   updateCategory: (id: string, patch: Partial<Category>) => void
@@ -50,7 +61,7 @@ interface StoreContextValue {
   updateGoal: (id: string, patch: Partial<Goal>) => void
   deleteGoal: (id: string) => void
   // journal
-  saveJournal: (date: string, mood: number, text: string) => void
+  saveJournal: (date: string, mood: number, text: string, tags: string[]) => void
   deleteJournal: (id: string) => void
   // settings
   updateSettings: (patch: Partial<Settings>) => void
@@ -64,6 +75,11 @@ const StoreContext = createContext<StoreContextValue | null>(null)
 export function StoreProvider({ children }: { children: ReactNode }) {
   const [data, setData] = useState<AppData>(() => loadData())
   const firstRun = useRef(true)
+
+  // Materialize recurring tasks / due subscriptions once on load.
+  useEffect(() => {
+    setData((d) => materializeRecurring(d))
+  }, [])
 
   // Persist whenever data changes (skip the very first render).
   useEffect(() => {
@@ -114,9 +130,43 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     }))
   }, [])
 
-  // ---- expenses ----
+  const addRecurringTask = useCallback(
+    (title: string, repeat: RepeatMode) => {
+      const t = title.trim()
+      if (!t || repeat === 'none') return
+      setData((d) => {
+        const rt: RecurringTask = {
+          id: uid(),
+          title: t,
+          repeat,
+          weekday: new Date().getDay(),
+          createdAt: Date.now(),
+        }
+        return materializeRecurring({
+          ...d,
+          recurringTasks: [...d.recurringTasks, rt],
+        })
+      })
+    },
+    [],
+  )
+
+  const deleteRecurringTask = useCallback((id: string) => {
+    setData((d) => ({
+      ...d,
+      recurringTasks: d.recurringTasks.filter((r) => r.id !== id),
+    }))
+  }, [])
+
+  // ---- expenses & income ----
   const addExpense = useCallback(
-    (e: { amount: number; categoryId: string; date: string; note?: string }) => {
+    (e: {
+      amount: number
+      categoryId: string
+      date: string
+      note?: string
+      type?: EntryType
+    }) => {
       if (!e.amount || e.amount <= 0) return
       setData((d) => ({
         ...d,
@@ -128,6 +178,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
             categoryId: e.categoryId,
             date: e.date,
             note: e.note,
+            type: e.type || 'expense',
             createdAt: Date.now(),
           },
         ],
@@ -138,6 +189,42 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   const deleteExpense = useCallback((id: string) => {
     setData((d) => ({ ...d, expenses: d.expenses.filter((x) => x.id !== id) }))
+  }, [])
+
+  // ---- subscriptions ----
+  const addSubscription = useCallback(
+    (s: Omit<Subscription, 'id' | 'createdAt' | 'active'>) => {
+      if (!s.name.trim() || !s.amount || s.amount <= 0) return
+      setData((d) =>
+        materializeRecurring({
+          ...d,
+          subscriptions: [
+            ...d.subscriptions,
+            { ...s, id: uid(), active: true, createdAt: Date.now() },
+          ],
+        }),
+      )
+    },
+    [],
+  )
+
+  const updateSubscription = useCallback(
+    (id: string, patch: Partial<Subscription>) => {
+      setData((d) => ({
+        ...d,
+        subscriptions: d.subscriptions.map((s) =>
+          s.id === id ? { ...s, ...patch } : s,
+        ),
+      }))
+    },
+    [],
+  )
+
+  const deleteSubscription = useCallback((id: string) => {
+    setData((d) => ({
+      ...d,
+      subscriptions: d.subscriptions.filter((s) => s.id !== id),
+    }))
   }, [])
 
   // ---- categories ----
@@ -166,7 +253,6 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     setData((d) => ({
       ...d,
       categories: d.categories.filter((c) => c.id !== id),
-      // reassign orphaned expenses to "other" if it exists, else keep id
       expenses: d.expenses.map((e) =>
         e.categoryId === id ? { ...e, categoryId: 'other' } : e,
       ),
@@ -230,27 +316,29 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   }, [])
 
   // ---- journal ----
-  const saveJournal = useCallback((date: string, mood: number, text: string) => {
-    setData((d) => {
-      const existing = d.journal.find((j) => j.date === date)
-      if (existing) {
+  const saveJournal = useCallback(
+    (date: string, mood: number, text: string, tags: string[]) => {
+      setData((d) => {
+        const existing = d.journal.find((j) => j.date === date)
+        if (existing) {
+          return {
+            ...d,
+            journal: d.journal.map((j) =>
+              j.date === date ? { ...j, mood, text, tags } : j,
+            ),
+          }
+        }
         return {
           ...d,
-          journal: d.journal.map((j) =>
-            j.date === date ? { ...j, mood, text } : j,
-          ),
+          journal: [
+            ...d.journal,
+            { id: uid(), date, mood, text, tags, createdAt: Date.now() },
+          ],
         }
-      }
-      const entry: JournalEntry = {
-        id: uid(),
-        date,
-        mood,
-        text,
-        createdAt: Date.now(),
-      }
-      return { ...d, journal: [...d.journal, entry] }
-    })
-  }, [])
+      })
+    },
+    [],
+  )
 
   const deleteJournal = useCallback((id: string) => {
     setData((d) => ({ ...d, journal: d.journal.filter((j) => j.id !== id) }))
@@ -262,7 +350,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const replaceAll = useCallback((incoming: AppData) => {
-    setData(incoming)
+    setData(materializeRecurring(incoming))
   }, [])
 
   const clearAll = useCallback(() => {
@@ -277,8 +365,13 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       updateTask,
       deleteTask,
       carryOverTasks,
+      addRecurringTask,
+      deleteRecurringTask,
       addExpense,
       deleteExpense,
+      addSubscription,
+      updateSubscription,
+      deleteSubscription,
       addCategory,
       updateCategory,
       deleteCategory,
@@ -302,8 +395,13 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       updateTask,
       deleteTask,
       carryOverTasks,
+      addRecurringTask,
+      deleteRecurringTask,
       addExpense,
       deleteExpense,
+      addSubscription,
+      updateSubscription,
+      deleteSubscription,
       addCategory,
       updateCategory,
       deleteCategory,

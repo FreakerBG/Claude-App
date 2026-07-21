@@ -14,6 +14,7 @@ const ITEMS: NavItem[] = [
   { to: '/habits', label: 'Habits', icon: '🔥', tab: true },
   { to: '/goals', label: 'Goals', icon: '🎯', tab: true },
   { to: '/journal', label: 'Journal', icon: '📓', tab: true },
+  { to: '/insights', label: 'Insights', icon: '📊' },
   { to: '/settings', label: 'Settings', icon: '⚙️' },
 ]
 
@@ -26,7 +27,7 @@ export function Sidebar() {
         <img src={`${base}icons/icon-192.png`} alt="" />
         <span>Momentum</span>
       </div>
-      {ITEMS.slice(0, 6).map((it) => (
+      {ITEMS.filter((it) => it.to !== '/settings').map((it) => (
         <NavLink
           key={it.to}
           to={it.to}

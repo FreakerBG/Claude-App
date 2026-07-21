@@ -3,6 +3,7 @@ import { useStore } from '../store/StoreContext'
 import { Modal } from '../components/Modal'
 import { lastNDays, shortWeekday, todayKey } from '../utils/dates'
 import { bestStreak, currentStreak } from '../utils/streak'
+import { confettiBurst } from '../utils/confetti'
 
 const EMOJI_CHOICES = ['💪', '📚', '🏃', '💧', '🧘', '🥗', '😴', '✍️', '🎯', '🚭']
 
@@ -43,7 +44,10 @@ export function Habits() {
                 <div className="row" style={{ gap: 12 }}>
                   <div
                     className={'check' + (doneToday ? ' on' : '')}
-                    onClick={() => toggleHabit(h.id, today)}
+                    onClick={(e) => {
+                      if (!doneToday) confettiBurst(e.clientX, e.clientY)
+                      toggleHabit(h.id, today)
+                    }}
                     role="checkbox"
                     aria-checked={doneToday}
                   >

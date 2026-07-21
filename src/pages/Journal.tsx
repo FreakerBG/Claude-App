@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useStore } from '../store/StoreContext'
 import { formatDayLabel, formatFullDate, todayKey } from '../utils/dates'
+import { ACTIVITY_TAGS } from '../store/types'
 
 export const MOODS = ['😞', '😕', '😐', '🙂', '😄']
 
@@ -9,6 +10,7 @@ export function Journal() {
   const [day, setDay] = useState(todayKey())
   const [mood, setMood] = useState(3)
   const [text, setText] = useState('')
+  const [tags, setTags] = useState<string[]>([])
   const [savedFlash, setSavedFlash] = useState(false)
 
   // Load the entry for the selected day whenever it changes.
@@ -16,11 +18,15 @@ export function Journal() {
     const entry = data.journal.find((j) => j.date === day)
     setMood(entry?.mood ?? 3)
     setText(entry?.text ?? '')
+    setTags(entry?.tags ?? [])
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [day])
 
+  const toggleTag = (id: string) =>
+    setTags((t) => (t.includes(id) ? t.filter((x) => x !== id) : [...t, id]))
+
   const save = () => {
-    saveJournal(day, mood, text.trim())
+    saveJournal(day, mood, text.trim(), tags)
     setSavedFlash(true)
     setTimeout(() => setSavedFlash(false), 1400)
   }
@@ -50,6 +56,23 @@ export function Journal() {
                 type="button"
               >
                 {m}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="field">
+          <label>What did you do?</label>
+          <div className="tag-wrap">
+            {ACTIVITY_TAGS.map((t) => (
+              <button
+                key={t.id}
+                type="button"
+                className={'tag-chip' + (tags.includes(t.id) ? ' on' : '')}
+                onClick={() => toggleTag(t.id)}
+              >
+                <span>{t.emoji}</span>
+                {t.label}
               </button>
             ))}
           </div>

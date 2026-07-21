@@ -1,20 +1,24 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useStore } from '../store/StoreContext'
 import { formatFullDate, greeting, monthKey, todayKey } from '../utils/dates'
 import { formatMoney } from '../utils/currency'
 import { currentStreak } from '../utils/streak'
+import { computeMomentum, encouragement } from '../utils/gamification'
+import { confettiBurst } from '../utils/confetti'
 import { MOODS } from './Journal'
 
 export function Dashboard() {
   const { data, toggleTask, toggleHabit } = useStore()
   const today = todayKey()
   const currency = data.settings.currency
+  const [nudgeDismissed, setNudgeDismissed] = useState(false)
 
   const todayTasks = data.tasks.filter((t) => t.date === today)
   const doneTasks = todayTasks.filter((t) => t.done).length
 
   const monthTotal = data.expenses
-    .filter((e) => monthKey(e.date) === monthKey(today))
+    .filter((e) => e.type !== 'income' && monthKey(e.date) === monthKey(today))
     .reduce((s, e) => s + e.amount, 0)
 
   const habitsDone = data.habits.filter(
@@ -24,7 +28,27 @@ export function Dashboard() {
   const activeGoals = data.goals.filter((g) => !g.done).slice(0, 3)
   const todayMood = data.journal.find((j) => j.date === today)
 
+  const momentum = computeMomentum(data)
   const name = data.settings.name.trim()
+
+  const tapTask = (e: React.MouseEvent, id: string, wasDone: boolean) => {
+    if (!wasDone) confettiBurst(e.clientX, e.clientY)
+    toggleTask(id)
+  }
+  const tapHabit = (e: React.MouseEvent, id: string, wasDone: boolean) => {
+    if (!wasDone) confettiBurst(e.clientX, e.clientY)
+    toggleHabit(id, today)
+  }
+
+  // Gentle nudge: what's still open today (never guilt-trips).
+  const pendingTasks = todayTasks.length - doneTasks
+  const pendingHabits = data.habits.length - habitsDone
+  const needsMood = !todayMood
+  const nudgeBits: string[] = []
+  if (pendingTasks > 0) nudgeBits.push(`${pendingTasks} task${pendingTasks > 1 ? 's' : ''}`)
+  if (pendingHabits > 0) nudgeBits.push(`${pendingHabits} habit${pendingHabits > 1 ? 's' : ''}`)
+  if (needsMood && data.journal.length > 0) nudgeBits.push('your mood')
+  const showNudge = !nudgeDismissed && nudgeBits.length > 0
 
   return (
     <>
@@ -36,10 +60,56 @@ export function Dashboard() {
           </h1>
           <div className="sub">{formatFullDate(today)}</div>
         </div>
-        <Link to="/settings" className="icon-btn" aria-label="Settings">
-          ⚙️
-        </Link>
+        <div className="row" style={{ gap: 2 }}>
+          <Link to="/insights" className="icon-btn" aria-label="Insights">
+            📊
+          </Link>
+          <Link to="/settings" className="icon-btn" aria-label="Settings">
+            ⚙️
+          </Link>
+        </div>
       </div>
+
+      {showNudge && (
+        <div className="nudge">
+          <span className="n-emoji">☀️</span>
+          <div className="grow">
+            <div className="n-title">Still on your plate today</div>
+            <div className="n-sub">{nudgeBits.join(' · ')} — one at a time.</div>
+          </div>
+          <button
+            className="icon-btn"
+            onClick={() => setNudgeDismissed(true)}
+            aria-label="Dismiss"
+          >
+            ✕
+          </button>
+        </div>
+      )}
+
+      {/* Momentum */}
+      <Link to="/insights" className="card" style={{ display: 'block' }}>
+        <div className="row" style={{ gap: 14 }}>
+          <div
+            className="level-ring"
+            style={{ ['--p' as string]: Math.round(momentum.progress * 100) }}
+          >
+            <div className="inner">
+              <span className="lvl">{momentum.level}</span>
+              <span className="cap">Level</span>
+            </div>
+          </div>
+          <div className="grow">
+            <div style={{ fontWeight: 800, fontSize: 17 }}>
+              {momentum.levelName} · {momentum.score.toLocaleString()} pts
+            </div>
+            <div className="muted" style={{ fontSize: 13.5 }}>
+              {encouragement(data, today)}
+            </div>
+          </div>
+          <span className="faint">→</span>
+        </div>
+      </Link>
 
       <div className="grid cols-2">
         {/* Tasks */}
@@ -75,7 +145,7 @@ export function Dashboard() {
                 <div className="list-item" key={t.id} style={{ padding: '8px 0' }}>
                   <div
                     className={'check' + (t.done ? ' on' : '')}
-                    onClick={() => toggleTask(t.id)}
+                    onClick={(e) => tapTask(e, t.id, t.done)}
                     style={{ width: 20, height: 20, fontSize: 11 }}
                   >
                     {t.done ? '✓' : ''}
@@ -144,7 +214,7 @@ export function Dashboard() {
                     >
                       <div
                         className={'check' + (done ? ' on' : '')}
-                        onClick={() => toggleHabit(h.id, today)}
+                        onClick={(e) => tapHabit(e, h.id, done)}
                         style={{ width: 20, height: 20, fontSize: 11 }}
                       >
                         {done ? '✓' : ''}

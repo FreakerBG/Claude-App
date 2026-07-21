@@ -13,15 +13,24 @@ devices).
 - **🏠 Home dashboard** — today's tasks, this month's spending, habit streaks,
   goal progress, and today's mood at a glance.
 - **✅ Tasks** — a daily checklist you tick off, day-by-day navigation, filters,
-  and one-tap carry-over of yesterday's unfinished tasks.
-- **💸 Expenses** — log spending by category, monthly totals, a category donut
-  chart, and per-category budgets with progress bars.
+  one-tap carry-over of unfinished tasks, and **recurring tasks** (daily /
+  weekdays / weekly) that appear automatically.
+- **💸 Money** — log spending **and income** by category, see **net**, a category
+  donut, per-category budgets, and **subscriptions & bills** that auto-log each
+  month with an "upcoming" heads-up.
 - **🔥 Habits** — build habits with current/best **streaks** and a last-7-days
   grid you can tap to fix missed days.
 - **🎯 Goals** — progress bars toward numeric targets (save $2000, run 100 km…).
-- **📓 Journal & mood** — a daily mood check-in + notes, with a history list.
+- **📓 Journal & mood** — a daily mood check-in, activity **tags**, and notes,
+  with a history list.
+- **📊 Insights** — a **momentum score** with levels & achievement badges,
+  6-month spending trend, habit-completion rates, mood **correlations**
+  ("better mood on days you exercise"), and a **Year in Pixels** mood calendar.
+- **⚡ Momentum & nudges** — earn points and level up as you complete things,
+  celebratory confetti on completion, a gentle daily nudge for what's still open,
+  optional reminder notifications, and a global **quick-add** button.
 - **⚙️ Settings** — name, currency, light/dark/system theme, editable expense
-  categories & budgets, and **backup export/import**.
+  categories & budgets, reminders, and **backup export/import**.
 
 Your data never leaves your device — no account, no server, no tracking.
 

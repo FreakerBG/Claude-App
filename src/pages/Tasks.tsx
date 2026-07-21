@@ -6,14 +6,41 @@ import {
   formatFullDate,
   todayKey,
 } from '../utils/dates'
+import { RepeatMode } from '../store/types'
+import { confettiBurst } from '../utils/confetti'
 
 type Filter = 'all' | 'active' | 'done'
 
+const REPEAT_LABEL: Record<RepeatMode, string> = {
+  none: 'One-time',
+  daily: 'Every day',
+  weekdays: 'Weekdays',
+  weekly: 'Weekly',
+}
+
 export function Tasks() {
-  const { data, addTask, toggleTask, deleteTask, carryOverTasks } = useStore()
+  const {
+    data,
+    addTask,
+    toggleTask,
+    deleteTask,
+    carryOverTasks,
+    addRecurringTask,
+    deleteRecurringTask,
+  } = useStore()
   const [day, setDay] = useState(todayKey())
   const [title, setTitle] = useState('')
+  const [repeat, setRepeat] = useState<RepeatMode>('none')
   const [filter, setFilter] = useState<Filter>('all')
+
+  const completeTask = (
+    e: React.MouseEvent,
+    id: string,
+    wasDone: boolean,
+  ) => {
+    if (!wasDone) confettiBurst(e.clientX, e.clientY)
+    toggleTask(id)
+  }
 
   const dayTasks = useMemo(
     () =>
@@ -33,8 +60,10 @@ export function Tasks() {
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault()
-    addTask(title, day)
+    if (repeat === 'none') addTask(title, day)
+    else addRecurringTask(title, repeat)
     setTitle('')
+    setRepeat('none')
   }
 
   return (
@@ -70,17 +99,62 @@ export function Tasks() {
           </button>
         </div>
 
-        <form onSubmit={submit} className="row" style={{ marginBottom: 14 }}>
-          <input
-            className="input"
-            placeholder="Add a task…"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-          />
-          <button className="btn primary" type="submit" disabled={!title.trim()}>
-            Add
-          </button>
+        <form onSubmit={submit} style={{ marginBottom: 14 }}>
+          <div className="row" style={{ marginBottom: 8 }}>
+            <input
+              className="input"
+              placeholder="Add a task…"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+            />
+            <button
+              className="btn primary"
+              type="submit"
+              disabled={!title.trim()}
+            >
+              Add
+            </button>
+          </div>
+          <select
+            className="select"
+            value={repeat}
+            onChange={(e) => setRepeat(e.target.value as RepeatMode)}
+            aria-label="Repeat"
+          >
+            {(Object.keys(REPEAT_LABEL) as RepeatMode[]).map((r) => (
+              <option key={r} value={r}>
+                {r === 'none' ? 'Does not repeat' : `Repeats: ${REPEAT_LABEL[r]}`}
+              </option>
+            ))}
+          </select>
         </form>
+
+        {data.recurringTasks.length > 0 && (
+          <div style={{ marginBottom: 14 }}>
+            <div className="faint" style={{ fontSize: 12, fontWeight: 700 }}>
+              REPEATING
+            </div>
+            <div className="list">
+              {data.recurringTasks.map((rt) => (
+                <div className="list-item" key={rt.id} style={{ padding: '8px 0' }}>
+                  <span>🔁</span>
+                  <div className="grow truncate">{rt.title}</div>
+                  <span className="pill">{REPEAT_LABEL[rt.repeat]}</span>
+                  <button
+                    className="icon-btn"
+                    onClick={() => {
+                      if (confirm(`Stop repeating “${rt.title}”?`))
+                        deleteRecurringTask(rt.id)
+                    }}
+                    aria-label="Delete"
+                  >
+                    🗑
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {carryable > 0 && day === todayKey() && (
           <button
@@ -119,14 +193,17 @@ export function Tasks() {
               <div className="list-item" key={t.id}>
                 <div
                   className={'check' + (t.done ? ' on' : '')}
-                  onClick={() => toggleTask(t.id)}
+                  onClick={(e) => completeTask(e, t.id, t.done)}
                   role="checkbox"
                   aria-checked={t.done}
                 >
                   {t.done ? '✓' : ''}
                 </div>
                 <div className="grow">
-                  <div className={t.done ? 'strike' : ''}>{t.title}</div>
+                  <div className={t.done ? 'strike' : ''}>
+                    {t.repeatId ? '🔁 ' : ''}
+                    {t.title}
+                  </div>
                 </div>
                 <button
                   className="icon-btn"
