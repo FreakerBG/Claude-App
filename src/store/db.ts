@@ -1,8 +1,23 @@
-import { AppData, Category, SCHEMA_VERSION } from './types'
+import { AppData, Category, SCHEMA_VERSION, YtFamily } from './types'
 import { uid } from '../utils/id'
 import { monthKey, parseKey, todayKey } from '../utils/dates'
 
 const STORAGE_KEY = 'momentum:data'
+
+export function defaultYtFamily(): YtFamily {
+  return {
+    members: [
+      { id: 'dalgia', name: 'Дългия', initials: 'Д' },
+      { id: 'ivan', name: 'Иван', initials: 'И' },
+      { id: 'denis', name: 'Денис', initials: 'Де' },
+      { id: 'antonio', name: 'Антонио', initials: 'А' },
+    ],
+    price: 3,
+    symbol: '€',
+    years: [2026, 2027],
+    paid: {},
+  }
+}
 
 export const DEFAULT_CATEGORIES: Category[] = [
   { id: 'food', name: 'Food & Drink', color: '#ef4444', monthlyBudget: 0 },
@@ -24,6 +39,7 @@ export function defaultData(): AppData {
     habitLogs: {},
     goals: [],
     journal: [],
+    ytFamily: defaultYtFamily(),
     settings: { name: '', currency: 'USD', theme: 'system' },
     meta: { schemaVersion: SCHEMA_VERSION },
   }
@@ -55,6 +71,10 @@ function normalize(raw: unknown): AppData {
         : base.habitLogs,
     goals: Array.isArray(r.goals) ? r.goals : base.goals,
     journal: Array.isArray(r.journal) ? r.journal : base.journal,
+    ytFamily:
+      r.ytFamily && Array.isArray(r.ytFamily.members)
+        ? { ...base.ytFamily, ...r.ytFamily }
+        : base.ytFamily,
     settings: { ...base.settings, ...(r.settings || {}) },
     meta: {
       schemaVersion: SCHEMA_VERSION,

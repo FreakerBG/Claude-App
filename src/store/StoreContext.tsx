@@ -63,6 +63,9 @@ interface StoreContextValue {
   // journal
   saveJournal: (date: string, mood: number, text: string, tags: string[]) => void
   deleteJournal: (id: string) => void
+  // youtube family tracker
+  toggleYtPaid: (memberId: string, year: number, month: number) => void
+  updateYtFamily: (patch: Partial<AppData['ytFamily']>) => void
   // settings
   updateSettings: (patch: Partial<Settings>) => void
   // data mgmt
@@ -344,6 +347,33 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     setData((d) => ({ ...d, journal: d.journal.filter((j) => j.id !== id) }))
   }, [])
 
+  // ---- youtube family tracker ----
+  const toggleYtPaid = useCallback(
+    (memberId: string, year: number, month: number) => {
+      const k = `${year}-${month}`
+      setData((d) => {
+        const forMember = { ...(d.ytFamily.paid[memberId] || {}) }
+        if (forMember[k]) delete forMember[k]
+        else forMember[k] = true
+        return {
+          ...d,
+          ytFamily: {
+            ...d.ytFamily,
+            paid: { ...d.ytFamily.paid, [memberId]: forMember },
+          },
+        }
+      })
+    },
+    [],
+  )
+
+  const updateYtFamily = useCallback(
+    (patch: Partial<AppData['ytFamily']>) => {
+      setData((d) => ({ ...d, ytFamily: { ...d.ytFamily, ...patch } }))
+    },
+    [],
+  )
+
   // ---- settings & data mgmt ----
   const updateSettings = useCallback((patch: Partial<Settings>) => {
     setData((d) => ({ ...d, settings: { ...d.settings, ...patch } }))
@@ -384,6 +414,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       deleteGoal,
       saveJournal,
       deleteJournal,
+      toggleYtPaid,
+      updateYtFamily,
       updateSettings,
       replaceAll,
       clearAll,
@@ -414,6 +446,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       deleteGoal,
       saveJournal,
       deleteJournal,
+      toggleYtPaid,
+      updateYtFamily,
       updateSettings,
       replaceAll,
       clearAll,

@@ -92,6 +92,22 @@ export interface Settings {
   reminderTime?: string // HH:MM (24h)
 }
 
+// "YouTube Family" shared-subscription tracker: who has paid their monthly share.
+export interface YtMember {
+  id: string
+  name: string
+  initials: string
+}
+
+export interface YtFamily {
+  members: YtMember[]
+  price: number // per member per month
+  symbol: string // currency symbol shown after the number, e.g. "€"
+  years: number[] // which calendar years the grid spans
+  // paid[memberId]["<year>-<monthIndex 0-11>"] === true
+  paid: Record<string, Record<string, boolean>>
+}
+
 export interface AppData {
   tasks: Task[]
   recurringTasks: RecurringTask[]
@@ -102,11 +118,12 @@ export interface AppData {
   habitLogs: HabitLogs
   goals: Goal[]
   journal: JournalEntry[]
+  ytFamily: YtFamily
   settings: Settings
   meta: { schemaVersion: number; lastMaterialized?: string }
 }
 
-export const SCHEMA_VERSION = 2
+export const SCHEMA_VERSION = 3
 
 // Activity tags offered on journal entries (also power Insights correlations).
 export const ACTIVITY_TAGS: { id: string; label: string; emoji: string }[] = [
