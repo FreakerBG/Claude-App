@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { useStore } from '../store/StoreContext'
 import { Modal } from '../components/Modal'
+import { YouTubeFamily } from '../components/YouTubeFamily'
 import { Donut, Slice } from '../components/Charts'
 import { formatMoney } from '../utils/currency'
 import { EntryType } from '../store/types'
@@ -347,6 +348,8 @@ export function Expenses() {
           ))
         )}
       </div>
+
+      <YouTubeFamily />
 
       {adding && (
         <AddEntryModal
