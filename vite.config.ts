@@ -20,12 +20,12 @@ export default defineConfig({
         'icons/icon-512.png',
       ],
       manifest: {
-        name: 'Momentum — Self Improvement',
+        name: 'Momentum — Personal OS',
         short_name: 'Momentum',
         description:
-          'Track tasks, expenses, habits, goals and journal — one app for self improvement.',
-        theme_color: '#6366f1',
-        background_color: '#0f1115',
+          'A private command center for tasks, money, habits, goals and reflection.',
+        theme_color: '#050911',
+        background_color: '#050911',
         display: 'standalone',
         orientation: 'portrait',
         icons: [
