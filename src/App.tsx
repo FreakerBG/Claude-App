@@ -1,4 +1,4 @@
-import { Routes, Route } from 'react-router-dom'
+import { Routes, Route, useLocation } from 'react-router-dom'
 import { Sidebar, TabBar } from './components/Nav'
 import { QuickAdd } from './components/QuickAdd'
 import { useApplyTheme, useStore } from './store/StoreContext'
@@ -14,6 +14,7 @@ import { Settings } from './pages/Settings'
 
 export function App() {
   const { data } = useStore()
+  const location = useLocation()
   useApplyTheme(data.settings.theme)
   useReminder(data)
 
@@ -22,17 +23,19 @@ export function App() {
       <Sidebar />
       <div className="main">
         <div className="content">
-          <Routes>
-            <Route path="/" element={<Dashboard />} />
-            <Route path="/tasks" element={<Tasks />} />
-            <Route path="/expenses" element={<Expenses />} />
-            <Route path="/habits" element={<Habits />} />
-            <Route path="/goals" element={<Goals />} />
-            <Route path="/journal" element={<Journal />} />
-            <Route path="/insights" element={<Insights />} />
-            <Route path="/settings" element={<Settings />} />
-            <Route path="*" element={<Dashboard />} />
-          </Routes>
+          <div className="route-frame" key={location.pathname}>
+            <Routes location={location}>
+              <Route path="/" element={<Dashboard />} />
+              <Route path="/tasks" element={<Tasks />} />
+              <Route path="/expenses" element={<Expenses />} />
+              <Route path="/habits" element={<Habits />} />
+              <Route path="/goals" element={<Goals />} />
+              <Route path="/journal" element={<Journal />} />
+              <Route path="/insights" element={<Insights />} />
+              <Route path="/settings" element={<Settings />} />
+              <Route path="*" element={<Dashboard />} />
+            </Routes>
+          </div>
         </div>
       </div>
       <QuickAdd />

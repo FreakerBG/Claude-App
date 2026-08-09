@@ -1,6 +1,6 @@
 // Generates the app's PNG icons with no external dependencies.
 // A dependency-free PNG encoder (zlib is built into Node) draws a white
-// checkmark on an indigo→violet gradient — matching favicon.svg.
+// reactor-style Momentum mark on a deep navy background — matching favicon.svg.
 //
 // Run with: npm run icons
 import { deflateSync } from 'node:zlib'
@@ -63,48 +63,48 @@ function encodePng(width, height, rgba) {
 }
 
 // ---- drawing helpers ----
-const C1 = [0x63, 0x66, 0xf1] // indigo-500
-const C2 = [0x8b, 0x5c, 0xf6] // violet-500
+const C1 = [0x04, 0x0a, 0x12]
+const C2 = [0x0d, 0x33, 0x44]
 const lerp = (a, b, t) => a + (b - a) * t
 const clamp01 = (v) => (v < 0 ? 0 : v > 1 ? 1 : v)
 
-function distToSegment(px, py, ax, ay, bx, by) {
-  const dx = bx - ax
-  const dy = by - ay
-  const len2 = dx * dx + dy * dy
-  let t = len2 === 0 ? 0 : ((px - ax) * dx + (py - ay) * dy) / len2
-  t = clamp01(t)
-  const cx = ax + t * dx
-  const cy = ay + t * dy
-  return Math.hypot(px - cx, py - cy)
-}
-
 function render(size) {
   const rgba = Buffer.alloc(size * size * 4)
-  // checkmark points (normalized) and stroke half-width in px
-  const A = [0.3 * size, 0.53 * size]
-  const B = [0.45 * size, 0.68 * size]
-  const C = [0.73 * size, 0.34 * size]
-  const half = 0.055 * size
+  const center = size / 2
+  const ring = size * 0.225
+  const outer = size * 0.305
+  const ringWidth = size * 0.025
+  const outerWidth = size * 0.009
 
   for (let y = 0; y < size; y++) {
     for (let x = 0; x < size; x++) {
       const cx = x + 0.5
       const cy = y + 0.5
-      // gradient background (top-left -> bottom-right)
-      const t = (x + y) / (2 * size)
+      const d = Math.hypot(cx - center, cy - center)
+      const t = clamp01(1 - d / (size * 0.72))
       let r = lerp(C1[0], C2[0], t)
       let g = lerp(C1[1], C2[1], t)
       let b = lerp(C1[2], C2[2], t)
-      // checkmark coverage (anti-aliased over ~1px)
-      const d = Math.min(
-        distToSegment(cx, cy, A[0], A[1], B[0], B[1]),
-        distToSegment(cx, cy, B[0], B[1], C[0], C[1]),
-      )
-      const cov = clamp01(half + 0.75 - d)
-      r = lerp(r, 255, cov)
-      g = lerp(g, 255, cov)
-      b = lerp(b, 255, cov)
+
+      const glow = clamp01(1 - Math.abs(d - ring) / (size * 0.12)) * 0.22
+      r = lerp(r, 20, glow)
+      g = lerp(g, 209, glow)
+      b = lerp(b, 236, glow)
+
+      const outerCov = clamp01(outerWidth + 0.8 - Math.abs(d - outer))
+      r = lerp(r, 22, outerCov * 0.72)
+      g = lerp(g, 121, outerCov * 0.72)
+      b = lerp(b, 144, outerCov * 0.72)
+
+      const ringCov = clamp01(ringWidth + 0.8 - Math.abs(d - ring))
+      r = lerp(r, 84, ringCov)
+      g = lerp(g, 234, ringCov)
+      b = lerp(b, 255, ringCov)
+
+      const core = clamp01((size * 0.095 - d) / (size * 0.025))
+      r = lerp(r, 183, core)
+      g = lerp(g, 249, core)
+      b = lerp(b, 255, core)
       const i = (y * size + x) * 4
       rgba[i] = Math.round(r)
       rgba[i + 1] = Math.round(g)

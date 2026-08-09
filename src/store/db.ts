@@ -40,7 +40,7 @@ export function defaultData(): AppData {
     goals: [],
     journal: [],
     ytFamily: defaultYtFamily(),
-    settings: { name: '', currency: 'USD', theme: 'system' },
+    settings: { name: '', currency: 'EUR', theme: 'dark' },
     meta: { schemaVersion: SCHEMA_VERSION },
   }
 }

@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
+import { Icon } from '../components/Icon'
 import { useStore } from '../store/StoreContext'
 import { formatFullDate, greeting, monthKey, todayKey } from '../utils/dates'
 import { formatMoney } from '../utils/currency'
@@ -14,284 +15,190 @@ export function Dashboard() {
   const currency = data.settings.currency
   const [nudgeDismissed, setNudgeDismissed] = useState(false)
 
-  const todayTasks = data.tasks.filter((t) => t.date === today)
-  const doneTasks = todayTasks.filter((t) => t.done).length
-
-  const monthTotal = data.expenses
-    .filter((e) => e.type !== 'income' && monthKey(e.date) === monthKey(today))
-    .reduce((s, e) => s + e.amount, 0)
+  const todayTasks = data.tasks.filter((task) => task.date === today)
+  const doneTasks = todayTasks.filter((task) => task.done).length
+  const monthEntries = data.expenses.filter(
+    (entry) => monthKey(entry.date) === monthKey(today),
+  )
+  const monthSpent = monthEntries
+    .filter((entry) => entry.type !== 'income')
+    .reduce((sum, entry) => sum + entry.amount, 0)
+  const monthIncome = monthEntries
+    .filter((entry) => entry.type === 'income')
+    .reduce((sum, entry) => sum + entry.amount, 0)
+  const monthNet = monthIncome - monthSpent
 
   const habitsDone = data.habits.filter(
-    (h) => data.habitLogs[h.id]?.[today],
+    (habit) => data.habitLogs[habit.id]?.[today],
   ).length
-
-  const activeGoals = data.goals.filter((g) => !g.done).slice(0, 3)
-  const todayMood = data.journal.find((j) => j.date === today)
-
+  const activeGoals = data.goals.filter((goal) => !goal.done).slice(0, 3)
+  const todayMood = data.journal.find((entry) => entry.date === today)
   const momentum = computeMomentum(data)
   const name = data.settings.name.trim()
 
-  const tapTask = (e: React.MouseEvent, id: string, wasDone: boolean) => {
-    if (!wasDone) confettiBurst(e.clientX, e.clientY)
+  const tapTask = (event: React.MouseEvent, id: string, wasDone: boolean) => {
+    if (!wasDone) confettiBurst(event.clientX, event.clientY)
     toggleTask(id)
   }
-  const tapHabit = (e: React.MouseEvent, id: string, wasDone: boolean) => {
-    if (!wasDone) confettiBurst(e.clientX, e.clientY)
+
+  const tapHabit = (event: React.MouseEvent, id: string, wasDone: boolean) => {
+    if (!wasDone) confettiBurst(event.clientX, event.clientY)
     toggleHabit(id, today)
   }
 
-  // Gentle nudge: what's still open today (never guilt-trips).
   const pendingTasks = todayTasks.length - doneTasks
   const pendingHabits = data.habits.length - habitsDone
-  const needsMood = !todayMood
   const nudgeBits: string[] = []
   if (pendingTasks > 0) nudgeBits.push(`${pendingTasks} task${pendingTasks > 1 ? 's' : ''}`)
   if (pendingHabits > 0) nudgeBits.push(`${pendingHabits} habit${pendingHabits > 1 ? 's' : ''}`)
-  if (needsMood && data.journal.length > 0) nudgeBits.push('your mood')
+  if (!todayMood && data.journal.length > 0) nudgeBits.push('mood check-in')
   const showNudge = !nudgeDismissed && nudgeBits.length > 0
 
   return (
     <>
-      <div className="page-head">
+      <div className="page-head dashboard-head">
         <div>
-          <h1>
-            {greeting()}
-            {name ? `, ${name}` : ''} 👋
-          </h1>
-          <div className="sub">{formatFullDate(today)}</div>
+          <div className="eyebrow"><span /> MOMENTUM // PERSONAL OS</div>
+          <h1>{greeting()}{name ? `, ${name}` : ''}</h1>
+          <div className="sub">{formatFullDate(today)} · Sofia</div>
         </div>
-        <div className="row" style={{ gap: 2 }}>
+        <div className="row head-actions">
           <Link to="/insights" className="icon-btn" aria-label="Insights">
-            📊
+            <Icon name="insights" />
           </Link>
           <Link to="/settings" className="icon-btn" aria-label="Settings">
-            ⚙️
+            <Icon name="settings" />
           </Link>
         </div>
       </div>
 
+      <Link to="/insights" className="command-hero">
+        <div className="hero-grid" aria-hidden="true" />
+        <div className="hero-scan" aria-hidden="true" />
+        <div className="hero-copy">
+          <div className="status-pill"><span /> LIVE STATUS</div>
+          <h2>{momentum.levelName}</h2>
+          <p>{encouragement(data, today)}</p>
+          <div className="hero-metrics">
+            <div><strong>{momentum.score.toLocaleString()}</strong><span>Total points</span></div>
+            <div><strong>{doneTasks}/{todayTasks.length}</strong><span>Tasks today</span></div>
+            <div><strong>{habitsDone}/{data.habits.length}</strong><span>Habits synced</span></div>
+          </div>
+        </div>
+        <div className="level-orbit" style={{ ['--p' as string]: Math.round(momentum.progress * 100) }}>
+          <span className="orbit-dot" />
+          <div className="orbit-inner">
+            <span className="orbit-kicker">LEVEL</span>
+            <strong>{momentum.level}</strong>
+            <span>{Math.round(momentum.progress * 100)}%</span>
+          </div>
+        </div>
+      </Link>
+
       {showNudge && (
         <div className="nudge">
-          <span className="n-emoji">☀️</span>
+          <span className="nudge-icon"><Icon name="pulse" /></span>
           <div className="grow">
-            <div className="n-title">Still on your plate today</div>
-            <div className="n-sub">{nudgeBits.join(' · ')} — one at a time.</div>
+            <div className="n-title">Next best actions</div>
+            <div className="n-sub">{nudgeBits.join(' · ')} — keep the signal moving.</div>
           </div>
-          <button
-            className="icon-btn"
-            onClick={() => setNudgeDismissed(true)}
-            aria-label="Dismiss"
-          >
-            ✕
+          <button className="icon-btn" onClick={() => setNudgeDismissed(true)} aria-label="Dismiss">
+            <Icon name="close" size={17} />
           </button>
         </div>
       )}
 
-      {/* Momentum */}
-      <Link to="/insights" className="card" style={{ display: 'block' }}>
-        <div className="row" style={{ gap: 14 }}>
-          <div
-            className="level-ring"
-            style={{ ['--p' as string]: Math.round(momentum.progress * 100) }}
-          >
-            <div className="inner">
-              <span className="lvl">{momentum.level}</span>
-              <span className="cap">Level</span>
-            </div>
+      <div className="grid cols-2 dashboard-grid">
+        <section className="card telemetry-card accent-cyan">
+          <div className="card-topline">
+            <div><span className="card-index">01</span><div className="card-title">Today’s tasks</div></div>
+            <Link to="/tasks" className="card-link">OPEN <span>→</span></Link>
           </div>
-          <div className="grow">
-            <div style={{ fontWeight: 800, fontSize: 17 }}>
-              {momentum.levelName} · {momentum.score.toLocaleString()} pts
-            </div>
-            <div className="muted" style={{ fontSize: 13.5 }}>
-              {encouragement(data, today)}
-            </div>
-          </div>
-          <span className="faint">→</span>
-        </div>
-      </Link>
-
-      <div className="grid cols-2">
-        {/* Tasks */}
-        <div className="card">
-          <div className="row" style={{ justifyContent: 'space-between' }}>
-            <div className="card-title" style={{ margin: 0 }}>
-              Today’s tasks
-            </div>
-            <Link to="/tasks" className="faint" style={{ fontSize: 13 }}>
-              View all →
-            </Link>
-          </div>
-          <div className="stat-row" style={{ margin: '10px 0 12px' }}>
-            <span className="stat-big">{doneTasks}</span>
-            <span className="muted">/ {todayTasks.length} done</span>
-          </div>
-          <div className="progress" style={{ marginBottom: 12 }}>
-            <span
-              style={{
-                width: `${
-                  todayTasks.length ? (doneTasks / todayTasks.length) * 100 : 0
-                }%`,
-              }}
-            />
-          </div>
+          <div className="stat-row"><span className="stat-big">{doneTasks}</span><span className="muted">of {todayTasks.length} complete</span></div>
+          <div className="progress"><span style={{ width: `${todayTasks.length ? (doneTasks / todayTasks.length) * 100 : 0}%` }} /></div>
           {todayTasks.length === 0 ? (
-            <Link to="/tasks" className="btn sm block">
-              + Add today’s tasks
-            </Link>
+            <Link to="/tasks" className="btn sm block">+ Add today’s tasks</Link>
           ) : (
-            <div className="list">
-              {todayTasks.slice(0, 4).map((t) => (
-                <div className="list-item" key={t.id} style={{ padding: '8px 0' }}>
-                  <div
-                    className={'check' + (t.done ? ' on' : '')}
-                    onClick={(e) => tapTask(e, t.id, t.done)}
-                    style={{ width: 20, height: 20, fontSize: 11 }}
-                  >
-                    {t.done ? '✓' : ''}
-                  </div>
-                  <div className={'grow truncate' + (t.done ? ' strike' : '')}>
-                    {t.title}
-                  </div>
+            <div className="list compact-list">
+              {todayTasks.slice(0, 4).map((task) => (
+                <div className="list-item" key={task.id}>
+                  <button className={'check' + (task.done ? ' on' : '')} onClick={(event) => tapTask(event, task.id, task.done)} aria-label={`Mark ${task.title} ${task.done ? 'open' : 'done'}`}>
+                    {task.done ? '✓' : ''}
+                  </button>
+                  <div className={'grow truncate' + (task.done ? ' strike' : '')}>{task.title}</div>
                 </div>
               ))}
             </div>
           )}
-        </div>
+        </section>
 
-        {/* Spending */}
-        <div className="card">
-          <div className="row" style={{ justifyContent: 'space-between' }}>
-            <div className="card-title" style={{ margin: 0 }}>
-              This month
-            </div>
-            <Link to="/expenses" className="faint" style={{ fontSize: 13 }}>
-              Details →
-            </Link>
+        <section className="card telemetry-card accent-blue">
+          <div className="card-topline">
+            <div><span className="card-index">02</span><div className="card-title">Financial pulse</div></div>
+            <Link to="/expenses" className="card-link">DETAILS <span>→</span></Link>
           </div>
-          <div style={{ margin: '10px 0 4px' }} className="faint">
-            Spent so far
+          <div className="money-main"><span>NET THIS MONTH</span><strong className={monthNet < 0 ? 'negative' : ''}>{formatMoney(monthNet, currency)}</strong></div>
+          <div className="finance-split">
+            <div><span>Income</span><strong className="positive">{formatMoney(monthIncome, currency)}</strong></div>
+            <div><span>Spent</span><strong>{formatMoney(monthSpent, currency)}</strong></div>
           </div>
-          <div className="stat-big">{formatMoney(monthTotal, currency)}</div>
-          <Link
-            to="/expenses"
-            className="btn sm block"
-            style={{ marginTop: 14 }}
-          >
-            + Log an expense
-          </Link>
-        </div>
+          <Link to="/expenses" className="btn sm block">+ Log transaction</Link>
+        </section>
 
-        {/* Habits */}
-        <div className="card">
-          <div className="row" style={{ justifyContent: 'space-between' }}>
-            <div className="card-title" style={{ margin: 0 }}>
-              Habits today
-            </div>
-            <Link to="/habits" className="faint" style={{ fontSize: 13 }}>
-              View all →
-            </Link>
+        <section className="card telemetry-card accent-green">
+          <div className="card-topline">
+            <div><span className="card-index">03</span><div className="card-title">Habit systems</div></div>
+            <Link to="/habits" className="card-link">OPEN <span>→</span></Link>
           </div>
           {data.habits.length === 0 ? (
-            <Link to="/habits" className="btn sm block" style={{ marginTop: 12 }}>
-              + Add a habit
-            </Link>
+            <Link to="/habits" className="btn sm block">+ Create a habit</Link>
           ) : (
             <>
-              <div className="stat-row" style={{ margin: '10px 0 12px' }}>
-                <span className="stat-big">{habitsDone}</span>
-                <span className="muted">/ {data.habits.length} done</span>
-              </div>
-              <div className="list">
-                {data.habits.slice(0, 4).map((h) => {
-                  const done = !!data.habitLogs[h.id]?.[today]
-                  const streak = currentStreak(data.habitLogs[h.id], today)
+              <div className="stat-row"><span className="stat-big">{habitsDone}</span><span className="muted">of {data.habits.length} synced</span></div>
+              <div className="list compact-list">
+                {data.habits.slice(0, 4).map((habit) => {
+                  const done = !!data.habitLogs[habit.id]?.[today]
+                  const streak = currentStreak(data.habitLogs[habit.id], today)
                   return (
-                    <div
-                      className="list-item"
-                      key={h.id}
-                      style={{ padding: '8px 0' }}
-                    >
-                      <div
-                        className={'check' + (done ? ' on' : '')}
-                        onClick={(e) => tapHabit(e, h.id, done)}
-                        style={{ width: 20, height: 20, fontSize: 11 }}
-                      >
+                    <div className="list-item" key={habit.id}>
+                      <button className={'check' + (done ? ' on' : '')} onClick={(event) => tapHabit(event, habit.id, done)} aria-label={`Mark ${habit.name} ${done ? 'open' : 'done'}`}>
                         {done ? '✓' : ''}
-                      </div>
-                      <div className="grow truncate">
-                        {h.emoji ? h.emoji + ' ' : ''}
-                        {h.name}
-                      </div>
-                      <span className="faint" style={{ fontSize: 12 }}>
-                        🔥 {streak}
-                      </span>
+                      </button>
+                      <div className="grow truncate">{habit.emoji ? `${habit.emoji} ` : ''}{habit.name}</div>
+                      <span className="streak-chip">{streak} DAYS</span>
                     </div>
                   )
                 })}
               </div>
             </>
           )}
-        </div>
+        </section>
 
-        {/* Goals + mood */}
-        <div className="card">
-          <div className="row" style={{ justifyContent: 'space-between' }}>
-            <div className="card-title" style={{ margin: 0 }}>
-              Goals
-            </div>
-            <Link to="/goals" className="faint" style={{ fontSize: 13 }}>
-              View all →
-            </Link>
+        <section className="card telemetry-card accent-violet">
+          <div className="card-topline">
+            <div><span className="card-index">04</span><div className="card-title">Mission progress</div></div>
+            <Link to="/goals" className="card-link">OPEN <span>→</span></Link>
           </div>
           {activeGoals.length === 0 ? (
-            <Link to="/goals" className="btn sm block" style={{ marginTop: 12 }}>
-              + Set a goal
-            </Link>
+            <Link to="/goals" className="btn sm block">+ Set a mission</Link>
           ) : (
-            <div className="list">
-              {activeGoals.map((g) => {
-                const pct = Math.min(
-                  100,
-                  g.targetValue > 0 ? (g.currentValue / g.targetValue) * 100 : 0,
-                )
+            <div className="list goal-list">
+              {activeGoals.map((goal) => {
+                const progress = Math.min(100, goal.targetValue > 0 ? (goal.currentValue / goal.targetValue) * 100 : 0)
                 return (
-                  <div key={g.id} style={{ padding: '8px 0' }}>
-                    <div
-                      className="row"
-                      style={{ justifyContent: 'space-between', marginBottom: 6 }}
-                    >
-                      <span className="truncate" style={{ fontWeight: 600 }}>
-                        {g.title}
-                      </span>
-                      <span className="faint" style={{ fontSize: 12 }}>
-                        {Math.round(pct)}%
-                      </span>
-                    </div>
-                    <div className="progress">
-                      <span style={{ width: `${pct}%` }} />
-                    </div>
+                  <div key={goal.id} className="goal-row">
+                    <div className="row"><span className="truncate">{goal.title}</span><strong>{Math.round(progress)}%</strong></div>
+                    <div className="progress"><span style={{ width: `${progress}%` }} /></div>
                   </div>
                 )
               })}
             </div>
           )}
-
-          <div
-            className="row"
-            style={{
-              justifyContent: 'space-between',
-              marginTop: 14,
-              paddingTop: 12,
-              borderTop: '1px solid var(--border)',
-            }}
-          >
-            <span className="muted">Today’s mood</span>
-            <Link to="/journal" style={{ fontSize: 22 }}>
-              {todayMood ? MOODS[todayMood.mood - 1] : '＋'}
-            </Link>
-          </div>
-        </div>
+          <Link to="/journal" className="mood-link">
+            <span><small>EMOTIONAL SIGNAL</small>Today’s mood</span>
+            <strong>{todayMood ? MOODS[todayMood.mood - 1] : '＋'}</strong>
+          </Link>
+        </section>
       </div>
     </>
   )

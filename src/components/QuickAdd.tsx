@@ -4,6 +4,7 @@ import { Modal } from './Modal'
 import { todayKey } from '../utils/dates'
 import { confettiBurst } from '../utils/confetti'
 import { MOODS } from '../pages/Journal'
+import { Icon } from './Icon'
 
 type Mode = 'menu' | 'task' | 'expense' | 'mood' | 'habit'
 
@@ -36,7 +37,7 @@ export function QuickAdd() {
         aria-label="Quick add"
         onClick={() => setOpen(true)}
       >
-        ＋
+        <Icon name="plus" size={25} />
       </button>
 
       {open && (
@@ -57,16 +58,16 @@ export function QuickAdd() {
           {mode === 'menu' && (
             <div className="qa-grid">
               <button className="qa-btn" onClick={() => setMode('task')}>
-                <span className="qa-emoji">✅</span>Task
+                <span className="qa-emoji"><Icon name="tasks" /></span>Task
               </button>
               <button className="qa-btn" onClick={() => setMode('expense')}>
-                <span className="qa-emoji">💸</span>Expense
+                <span className="qa-emoji"><Icon name="money" /></span>Expense
               </button>
               <button className="qa-btn" onClick={() => setMode('mood')}>
-                <span className="qa-emoji">😊</span>Mood
+                <span className="qa-emoji">◉</span>Mood
               </button>
               <button className="qa-btn" onClick={() => setMode('habit')}>
-                <span className="qa-emoji">🔥</span>Habit
+                <span className="qa-emoji"><Icon name="habits" /></span>Habit
               </button>
             </div>
           )}
